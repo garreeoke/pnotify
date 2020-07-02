@@ -26,10 +26,10 @@ check_user() {
         local email=$2
         echo "Checking userid: $userid"
         days_until_expired=$(( ($(date --date="$(chage -l $userid | grep 'Password expires' | cut -d ":" -f 2)" +%s) - $(date +%s) )/(60*60*24) ))
-        if [ $days_until_expired -lt $PASSWORD_EXPIRE_DAYS_THRESHOLD ]
+        if [[ $days_until_expired -lt $PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD && $PNOTIFY_SEND_EMAILS == "true" ]]
 	then
         	echo "$userid password expiring"
-                notify $email "password expiring in less than $EXPIRED_EMAIL_DAYS days on $PNOTIFY_SYSTEM_TYPE"
+                notify $email "password expiring in $days_until_expired days on $PNOTIFY_SYSTEM_TYPE"
         fi
 }
 
@@ -42,7 +42,7 @@ notify() {
 
 # Check the desired env variables are set
 check_env() {
-   	env_vars=("PNOTIFY_SYSTEM_TYPE" "PASSWORD_EXPIRE_DAYS_THRESHOLD" "PASSWORD_INACTIVE_DAYS_THRESHOLD")
+   	env_vars=("PNOTIFY_SYSTEM_TYPE" "PNOTIFY_SEND_EMAILS" "PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD" "PNOTIFY_PASSWORD_INACTIVE_DAYS_THRESHOLD")
    	not_set=0
    	for e in ${env_vars[@]}
    	do 
@@ -76,7 +76,6 @@ then
 fi
 
 # Check env variables are loaded
-
 check_env
 
 # Check data file
