@@ -17,6 +17,8 @@
 # For each user in the list determine how many days they are from being disabled due to inactivity – if within n-days, send the user an email
 # Send a summary report to the list of emails in the config file
 
+# Global vars
+emails_sent=()
 
 # Functions
 # Check User
@@ -25,19 +27,41 @@ check_user() {
         local userid=$1
         local email=$2
         echo "Checking userid: $userid"
-        days_until_expired=$(( ($(date --date="$(chage -l $userid | grep 'Password expires' | cut -d ":" -f 2)" +%s) - $(date +%s) )/(60*60*24) ))
-        if [[ $days_until_expired -lt $PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD && $PNOTIFY_SEND_EMAILS == "true" ]]
-	then
-        	echo "$userid password expiring"
-                notify $email "password expiring in $days_until_expired days on $PNOTIFY_SYSTEM_TYPE"
+	# Make sure user exists
+        if id -u $userid >/dev/null 2>&1; then
+		echo "User exists"
+                days_until_expired=$(( ($(date --date="$(chage -l $userid | grep 'Password expires' | cut -d ":" -f 2)" +%s) - $(date +%s) )/(60*60*24) ))
+                echo "days_until_expired: $days_until_expired"
+                if [[ $days_until_expired -lt $PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD && $PNOTIFY_SEND_EMAILS == "true" ]]
+                then
+                        echo "$userid password expiring"
+                        notify_user $email "password expiring in $days_until_expired days on $PNOTIFY_SYSTEM_TYPE"
+                fi
+        else 
+		echo "Users does not exist"
         fi
 }
 
-# Notification
-notify() {
+# Notify a user
+notify_user() {
 	echo "Emailing $1"
         echo "MSG: $2"
         #mail -s "$2" $1 < /dev/null
+        emails_sent+=( "Sent To: $1 Msg: $2" ) 
+}
+
+# Send summary
+send_summary() {
+        
+	if [ ${#PNOTIFY_SUMMARY_EMAILS[@]} -gt 0 ]
+        then
+                # Build file for the attachment to the email
+                local summary_file="pnotify_summary_$(date +%m-%d-%Y).txt"
+                echo ${emails_sent[*]} > $summary_file
+		local summary_email_list=$(printf '%s\n' "$(local IFS=,; printf '%s' "${PNOTIFY_SUMMARY_EMAILS[*]}")")
+		echo "Sending summary email to $summary_email_list"
+                mail -s "Pnotify emails sent for $PNOTIFY_SYSTEM_TYPE on $(date +%m-%d-%Y)" $summary_email_list < $summary_file
+        fi
 }
 
 # Check the desired env variables are set
@@ -71,7 +95,6 @@ then
 	then
 		[ ! -f $CONFIG_FILE ] && { echo "$CONFIG_FILE file not found"; exit 99; }
 	fi
-  
 	source $CONFIG_FILE
 fi
 
@@ -82,7 +105,14 @@ check_env
 INPUT=user_data.csv
 [ ! -f $INPUT ] && { echo "$INPUT user_data.csv file not found"; exit 99; }
 
+# Read user list and get details
 while IFS="," read userid email 
 do
         check_user $userid $email
 done < $INPUT
+
+# Send summary email
+if [ ${#emails_sent[@]} -gt 0 ]
+then
+  	send_summary 
+fi
