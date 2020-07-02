@@ -29,7 +29,7 @@ check_user() {
         if [ $days_until_expired -lt $PASSWORD_EXPIRE_DAYS_THRESHOLD ]
 	then
         	echo "$userid password expiring"
-                notify $email "password expiring in less than $EXPIRED_EMAIL_DAYS days"
+                notify $email "password expiring in less than $EXPIRED_EMAIL_DAYS days on $PNOTIFY_SYSTEM_TYPE"
         fi
 }
 
@@ -37,7 +37,7 @@ check_user() {
 notify() {
 	echo "Emailing $1"
         echo "MSG: $2"
-        mail -s "Password expiring in 
+        #mail -s "$2" $1 < /dev/null
 }
 
 # Check the desired env variables are set
