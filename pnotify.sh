@@ -57,7 +57,7 @@ send_summary() {
         then
                 # Build file for the attachment to the email
                 local summary_file="pnotify_summary_$(date +%m-%d-%Y).txt"
-                echo ${emails_sent[*]} > $summary_file
+                echo ${emails_sent[*]} > reports/$summary_file
 		local summary_email_list=$(printf '%s\n' "$(local IFS=,; printf '%s' "${PNOTIFY_SUMMARY_EMAILS[*]}")")
 		echo "Sending summary email to $summary_email_list"
                 mail -s "Pnotify emails sent for $PNOTIFY_SYSTEM_TYPE on $(date +%m-%d-%Y)" $summary_email_list < $summary_file
@@ -103,7 +103,7 @@ check_env
 
 # Check data file
 INPUT=user_data.csv
-[ ! -f $INPUT ] && { echo "$INPUT user_data.csv file not found"; exit 99; }
+[ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
 
 # Read user list and get details
 while IFS="," read userid email 
