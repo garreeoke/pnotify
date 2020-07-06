@@ -13,16 +13,16 @@ Script to check logins for upcoming password expiration and inactivity.
 
 ## Syntax
 
-`pnotify [options]
+pnotify [options]
 
--c [PNOTIFY_CFG_FILE]
--d [PNOTIFY_DATA_FILE]
--e [PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD]
--i [PNOTIFY_PASSWORD_INACTIVE_DAYS_THRESHOLD]
--o [PNOTIFY_OUTPUT_DIR]
--r [PNOTIFY_REPORT_EMAILS]
--s [PNOTIFY_SEND_EMAILS]
--t [PNOTIFY_SYSTEM_TYPE]`
+* -c [PNOTIFY_CFG_FILE]
+* -d [PNOTIFY_DATA_FILE]
+* -e [PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD]
+* -i [PNOTIFY_PASSWORD_INACTIVE_DAYS_THRESHOLD]
+* -o [PNOTIFY_OUTPUT_DIR]
+* -r [PNOTIFY_REPORT_EMAILS]
+* -s [PNOTIFY_SEND_EMAILS]
+* -t [PNOTIFY_SYSTEM_TYPE]
 
 If -c is used or PNOTIFY_CFG_FILE is set, all options will be loaded from a config file.  
 If in both places, config file wins.
