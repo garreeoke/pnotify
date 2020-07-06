@@ -60,7 +60,7 @@ send_summary() {
                 echo ${emails_sent[*]} > reports/$summary_file
 		local summary_email_list=$(printf '%s\n' "$(local IFS=,; printf '%s' "${PNOTIFY_SUMMARY_EMAILS[*]}")")
 		echo "Sending summary email to $summary_email_list"
-                mail -s "Pnotify emails sent for $PNOTIFY_SYSTEM_TYPE on $(date +%m-%d-%Y)" $summary_email_list < $summary_file
+                #mail -s "Pnotify emails sent for $PNOTIFY_SYSTEM_TYPE on $(date +%m-%d-%Y)" $summary_email_list < reports/$summary_file
         fi
 }
 
@@ -88,10 +88,10 @@ check_env() {
 ########
 
 # Check env vars
-CONFIG_FILE=config_file.env
+CONFIG_FILE=data/config_file.env
 if [ ! -z $1 ] 
 then
-	if [ $1 == "loadvars" ]	
+	if [ $1 == "loadcfg" ]	
 	then
 		[ ! -f $CONFIG_FILE ] && { echo "$CONFIG_FILE file not found"; exit 99; }
 	fi
@@ -102,7 +102,7 @@ fi
 check_env
 
 # Check data file
-INPUT=user_data.csv
+INPUT=data/user_data.csv
 [ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
 
 # Read user list and get details

@@ -1,11 +1,5 @@
 FROM centos:8
 
-ENV PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD 900
-ENV PNOTIFY_PASSWORD_INACTIVE_DAYS_THRESHOLD 10
-ENV PNOTIFY_SYSTEM_TYPE vpn
-ENV PNOTIFY_SEND_EMAILS true
-
-WORKDIR /tmp/pnotify
-COPY pnotify.sh .
-
-CMD ["./pnotify.sh"]
+WORKDIR /pnotify
+COPY pnotify.sh /pnotify/
+CMD ["/pnotify/pnotify.sh"]
