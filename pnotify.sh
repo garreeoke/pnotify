@@ -78,6 +78,7 @@ send_email() {
 	[[ -z $2 ]] && SUBJECT="Notification from $SENDER on server $SERVER_NAME"
 	[[ -z $3 ]] && RECEIVER="another_configured_email_address"
 	[[ -z $4 ]] && TEXT="no text context"
+	echo "Sending email to $RECEIVER"
 
 	if [[ $TYPE == "user" ]] 
 	then
@@ -85,13 +86,12 @@ send_email() {
 		msgsummary="Subject: $SUBJECT --- From: $SENDER --- To: $RECEIVER --- $TEXT"
 		echo $msgsummary >> $PNOTIFY_OUTPUT_DIR/$summary_file
         	emails_sent+=( $msg ) 
-		echo -e $msg | sendmail -t
+		#echo -e $msg | sendmail -t
 	elif [[ $TYPE == "summary" ]]
 	then
 		msg="Subject: $SUBJECT\nFrom: $SENDER\nTo: $RECEIVER\n\n"
-		echo -e $msg | sendmail -t < $PNOTIFY_OUTPUT_DIR/$summary_file
+		#echo -e $msg | sendmail -t < $PNOTIFY_OUTPUT_DIR/$summary_file
 	fi
-	exit $?
 }
 
 # Send summary
@@ -102,7 +102,7 @@ send_summary() {
                 # Build file for the attachment to the email
 		local summary_email_list=$(printf '%s\n' "$(local IFS=,; printf '%s' "${PNOTIFY_REPORT_EMAILS[*]}")")
 		echo "Sending summary email to $summary_email_list"
-		notify_user summary "Pnotify notification summary" $summary_email_list k
+		send_email summary "Pnotify notification summary" $summary_email_list k
         fi
 }
 
