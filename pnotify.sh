@@ -33,7 +33,6 @@ print_usage() {
 	echo "-o [PNOTIFY_OUTPUT_DIR]"
 	echo "-r [PNOTIFY_REPORT_EMAILS]"
 	echo "-s [PNOTIFY_SEND_EMAILS]"
-	echo "-t [PNOTIFY_SYSTEM_TYPE]"
 	echo ""
 }
 
@@ -49,7 +48,7 @@ check_user() {
                 if [[ $days_until_expired -lt $PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD && $PNOTIFY_SEND_EMAILS == "true" ]]
                 then
                         echo "$userid password expiring"
-                        notify_user $email "$userid Password expiring in $days_until_expired days on $PNOTIFY_SYSTEM_TYPE"
+                        send_email user "Password expiriation warning" $email "$userid Password expiring in $days_until_expired days on $(hostname)"
                 fi
 		# INACTIVE
 		days_inactive=$(( ($(date --date="$(chage -l $userid | grep 'Password inactive' | cut -d ":" -f 2)" +%s) - $(date +%s) )/(60*60*24) ))
@@ -57,21 +56,42 @@ check_user() {
                 if [[ $days_inactive -lt $PNOTIFY_PASSWORD_INACTIVE_DAYS_THRESHOLD && $PNOTIFY_SEND_EMAILS == "true" ]]
                 then
                         echo "$userid password inactivity warning"
-                        notify_user $email "$userid Password will expire due to inactivity in $days_inactive days on $PNOTIFY_SYSTEM_TYPE"
+                        send_email user "Inactivity warning" $email "$userid Password will expire due to inactivity in $days_inactive days on $(hostname)"
                 fi
         else 
 		echo "Users does not exist"
         fi
 }
 
-# Notify a user
-notify_user() {
-	echo "Emailing $1"
-        echo "MSG: $2"
-        #mail -s "$2" $1 < /dev/null
-	msg="Sent To: $1 -- Date: $(date) -- Msg: $2)"
-        echo $msg >> $PNOTIFY_OUTPUT_DIR/$summary_file
-        emails_sent+=( $msg ) 
+# Send Email
+send_email() {
+	TYPE=$1
+	SUBJECT=$2
+	RECEIVER=$3
+        TEXT=$4
+
+	SERVER_NAME=$(hostname)
+	SENDER=$(whoami)
+	USER="noreply"
+	SUBJECT="Notification from $SENDER on server $SERVER_NAME"
+	
+	[[ -z $2 ]] && SUBJECT="Notification from $SENDER on server $SERVER_NAME"
+	[[ -z $3 ]] && RECEIVER="another_configured_email_address"
+	[[ -z $4 ]] && TEXT="no text context"
+
+	if [[ $TYPE == "user" ]] 
+	then
+		msg="Subject: $SUBJECT\nFrom: $SENDER\nTo: $RECEIVER\n\n$TEXT"
+		msgsummary="Subject: $SUBJECT --- From: $SENDER --- To: $RECEIVER --- $TEXT"
+		echo $msgsummary >> $PNOTIFY_OUTPUT_DIR/$summary_file
+        	emails_sent+=( $msg ) 
+		echo -e $msg | sendmail -t
+	elif [[ $TYPE == "summary" ]]
+	then
+		msg="Subject: $SUBJECT\nFrom: $SENDER\nTo: $RECEIVER\n\n"
+		echo -e $msg | sendmail -t < $PNOTIFY_OUTPUT_DIR/$summary_file
+	fi
+	exit $?
 }
 
 # Send summary
@@ -82,7 +102,7 @@ send_summary() {
                 # Build file for the attachment to the email
 		local summary_email_list=$(printf '%s\n' "$(local IFS=,; printf '%s' "${PNOTIFY_REPORT_EMAILS[*]}")")
 		echo "Sending summary email to $summary_email_list"
-                #mail -s "Pnotify emails sent for $PNOTIFY_SYSTEM_TYPE on $(date +%m-%d-%Y)" $summary_email_list < $PNOTIFY_OUTPUT_DIR/$summary_file
+		notify_user summary "Pnotify notification summary" $summary_email_list k
         fi
 }
 
@@ -93,7 +113,7 @@ check_env() {
 	then
 		env_vars+=( $1 )	
 	else
-		env_vars=("PNOTIFY_SYSTEM_TYPE" "PNOTIFY_SEND_EMAILS" "PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD" "PNOTIFY_PASSWORD_INACTIVE_DAYS_THRESHOLD" "PNOTIFY_DATA_FILE")
+		env_vars=("PNOTIFY_SEND_EMAILS" "PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD" "PNOTIFY_PASSWORD_INACTIVE_DAYS_THRESHOLD" "PNOTIFY_DATA_FILE")
 	fi
    	not_set=0
    	for e in ${env_vars[@]}
