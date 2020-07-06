@@ -19,23 +19,45 @@
 
 # Global vars
 emails_sent=()
+summary_file="pnotify_summary_$(date +%m-%d-%Y).txt"
 
-# Functions
-# Check User
-# Go through the checks
+#Functions
+
+print_usage() {
+	echo "Options: "
+        echo ""
+	echo "-c [PNOTIFY_CFG_FILE]"
+	echo "-d [PNOTIFY_DATA_FILE]"
+	echo "-e [PNOTIFY_PASSWORD_EXPIRE_DAYS]"
+	echo "-i [PNOTIFY_PASSWORD_INACTIVE_DAYS]"
+	echo "-o [PNOTIFY_OUTPUT_DIR]"
+	echo "-r [PNOTIFY_REPORT_EMAILS]"
+	echo "-s [PNOTIFY_SEND_EMAILS]"
+	echo "-t [PNOTIFY_SYSTEM_TYPE]"
+	echo ""
+}
+
 check_user() {
         local userid=$1
         local email=$2
         echo "Checking userid: $userid"
 	# Make sure user exists
         if id -u $userid >/dev/null 2>&1; then
-		echo "User exists"
+		# EXPIRED
                 days_until_expired=$(( ($(date --date="$(chage -l $userid | grep 'Password expires' | cut -d ":" -f 2)" +%s) - $(date +%s) )/(60*60*24) ))
                 echo "days_until_expired: $days_until_expired"
                 if [[ $days_until_expired -lt $PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD && $PNOTIFY_SEND_EMAILS == "true" ]]
                 then
                         echo "$userid password expiring"
-                        notify_user $email "password expiring in $days_until_expired days on $PNOTIFY_SYSTEM_TYPE"
+                        notify_user $email "$userid Password expiring in $days_until_expired days on $PNOTIFY_SYSTEM_TYPE"
+                fi
+		# INACTIVE
+		days_inactive=$(( ($(date --date="$(chage -l $userid | grep 'Password inactive' | cut -d ":" -f 2)" +%s) - $(date +%s) )/(60*60*24) ))
+                echo "days_until_inactive: $days_inactive"
+                if [[ $days_inactive -lt $PNOTIFY_PASSWORD_INACTIVE_DAYS_THRESHOLD && $PNOTIFY_SEND_EMAILS == "true" ]]
+                then
+                        echo "$userid password inactivity warning"
+                        notify_user $email "$userid Password will expire due to inactivity in $days_inactive days on $PNOTIFY_SYSTEM_TYPE"
                 fi
         else 
 		echo "Users does not exist"
@@ -47,26 +69,32 @@ notify_user() {
 	echo "Emailing $1"
         echo "MSG: $2"
         #mail -s "$2" $1 < /dev/null
-        emails_sent+=( "Sent To: $1 Msg: $2" ) 
+	msg="Sent To: $1 -- Date: $(date) -- Msg: $2)"
+        echo $msg >> $PNOTIFY_OUTPUT_DIR/$summary_file
+        emails_sent+=( $msg ) 
 }
 
 # Send summary
 send_summary() {
-        
-	if [ ${#PNOTIFY_SUMMARY_EMAILS[@]} -gt 0 ]
+	echo "Checking if need to send summary report"
+	if [ ${#PNOTIFY_REPORT_EMAILS[@]} -gt 0 ]
         then
                 # Build file for the attachment to the email
-                local summary_file="pnotify_summary_$(date +%m-%d-%Y).txt"
-                echo ${emails_sent[*]} > reports/$summary_file
-		local summary_email_list=$(printf '%s\n' "$(local IFS=,; printf '%s' "${PNOTIFY_SUMMARY_EMAILS[*]}")")
+		local summary_email_list=$(printf '%s\n' "$(local IFS=,; printf '%s' "${PNOTIFY_REPORT_EMAILS[*]}")")
 		echo "Sending summary email to $summary_email_list"
-                #mail -s "Pnotify emails sent for $PNOTIFY_SYSTEM_TYPE on $(date +%m-%d-%Y)" $summary_email_list < reports/$summary_file
+                #mail -s "Pnotify emails sent for $PNOTIFY_SYSTEM_TYPE on $(date +%m-%d-%Y)" $summary_email_list < $PNOTIFY_OUTPUT_DIR/$summary_file
         fi
 }
 
 # Check the desired env variables are set
 check_env() {
-   	env_vars=("PNOTIFY_SYSTEM_TYPE" "PNOTIFY_SEND_EMAILS" "PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD" "PNOTIFY_PASSWORD_INACTIVE_DAYS_THRESHOLD")
+        env_vars=()
+        if [ ! -z $1 ]
+	then
+		env_vars+=( $1 )	
+	else
+		env_vars=("PNOTIFY_CFG_FILE" "PNOTIFY_SYSTEM_TYPE" "PNOTIFY_SEND_EMAILS" "PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD" "PNOTIFY_PASSWORD_INACTIVE_DAYS_THRESHOLD" "PNOTIFY_DATA_FILE")
+	fi
    	not_set=0
    	for e in ${env_vars[@]}
    	do 
@@ -79,6 +107,7 @@ check_env() {
 
    	if [ $not_set -gt 0 ]
         then
+		print_usage
 		exit 99;
         fi
 }
@@ -87,30 +116,39 @@ check_env() {
 # Main #
 ########
 
-# Check env vars
-# Since this can be run from command line or docker, have the ability to load config from a file
-CONFIG_FILE=data/config_file.env
-if [ ! -z $1 ] 
+# Process args
+while getopts 'c:d:e:i:o:r:st:' flag; do
+  case "${flag}" in
+    c) PNOTIFY_CFG_FILE="${OPTARG}" ;;
+    d) PNOTIFY_DATA_FILE="${OPTARG}" ;;
+    e) PNOTIFY_PASSWORD_EXPIRE_DAYS="${OPTARG}" ;;
+    i) PNOTIFY_PASSWORD_INACTIVE_DAYS="${OPTARG}" ;;
+    o) PNOTIFY_OUTPUT_DIR="${OPTARG}" ;;
+    *) print_usage
+       exit 1 ;;
+  esac
+done
+
+# First check if PNOTIFY_CFG_FILE is set, if so load the file
+# Can specify with -c option on command line or preset ENV variable
+# If -c option is not passed assume all ENV variables are set (most useful for docker)
+if [ ! -z $PNOTIFY_CFG_FILE ]
 then
-	if [ $1 == "loadcfg" ]	
-	then
-		[ ! -f $CONFIG_FILE ] && { echo "$CONFIG_FILE file not found"; exit 99; }
-	fi
-	source $CONFIG_FILE
+        [ ! -f $PNOTIFY_CFG_FILE ] && { echo "$PNOTIFY_CFG_FILE file not found"; exit 99; }
+	source $PNOTIFY_CFG_FILE
 fi
 
-# Check env variables are loaded
+# Check all needed env variables are loaded
 check_env
 
 # Check data file
-INPUT=data/user_data.csv
-[ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
+[ ! -f $PNOTIFY_DATA_FILE ] && { echo "$PNOTIFY_DATA_FILE file not found"; exit 99; }
 
 # Read user list and get details
 while IFS="," read userid email 
 do
         check_user $userid $email
-done < $INPUT
+done < $PNOTIFY_DATA_FILE
 
 # Send summary email
 if [ ${#emails_sent[@]} -gt 0 ]
