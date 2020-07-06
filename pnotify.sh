@@ -88,6 +88,7 @@ check_env() {
 ########
 
 # Check env vars
+# Since this can be run from command line or docker, have the ability to load config from a file
 CONFIG_FILE=data/config_file.env
 if [ ! -z $1 ] 
 then
