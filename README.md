@@ -22,7 +22,6 @@ pnotify [options]
 * -o [PNOTIFY_OUTPUT_DIR]
 * -r [PNOTIFY_REPORT_EMAILS]
 * -s [PNOTIFY_SEND_EMAILS]
-* -t [PNOTIFY_SYSTEM_TYPE]
 
 If -c is used or PNOTIFY_CFG_FILE is set, all options will be loaded from a config file.  
 If in both places, config file wins.
@@ -35,7 +34,6 @@ docker
 * PNOTIFY_CFG_FILE: config file
 * PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD: number of days until expiration to send email to the user
 * PNOTIFY_PASSWORD_INACTIVE_DAYS_THRESHOLD: number of days inactive to start sending emails
-* PNOTIFY_SYSTEM_TYPE: type of system this is running on (ie. VPN)
 * PNOTIFY_SEND_EMAILS: true or false whether to send emails or not
 * PNOTIFY_REPORT_EMAILS: list of email addresses to send summary report email
 * PNOTIFY_DATA_FILE: relative path to input file
