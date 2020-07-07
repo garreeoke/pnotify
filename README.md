@@ -2,7 +2,7 @@
 
 Script to check logins for upcoming password expiration and inactivity.
 
-## Quick Start
+## Quick Start ..
 
 **Currently emails are not being sent ... that work is TBD**
 
