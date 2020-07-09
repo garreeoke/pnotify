@@ -79,9 +79,8 @@ send_email() {
         	emails_sent+=( $msgsummary ) 
 		# Below should send if mail configured on server
 		echo -e $TEXT  | mailx -s "$SUBJECT" $RECEIVER
-		# Example if setup account in ~/.mailrc
+		# Example if setup gmail account in ~/.mailrc
 		#echo -e $TEXT  | mailx -A gmail -s "$SUBJECT" $RECEIVER
-
 	elif [[ $TYPE == "summary" ]]
 	then
 		msg="Subject: $SUBJECT\nFrom: $SENDER\nTo: $RECEIVER\n\n"
