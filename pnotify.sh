@@ -47,7 +47,7 @@ check_user() {
                 echo "days_until_expired: $days_until_expired"
                 if [[ $days_until_expired -lt $PNOTIFY_PASSWORD_EXPIRE_DAYS_THRESHOLD && $PNOTIFY_SEND_EMAILS == "true" ]]
                 then
-                        echo "$userid password expiring"
+                        echo "$userid password expiring sending email to $email"
                         send_email user "Password expiriation warning" $email "$userid Password expiring in $days_until_expired days on $(hostname)"
                 fi
 		# INACTIVE
@@ -55,7 +55,7 @@ check_user() {
                 echo "days_until_inactive: $days_inactive"
                 if [[ $days_inactive -lt $PNOTIFY_PASSWORD_INACTIVE_DAYS_THRESHOLD && $PNOTIFY_SEND_EMAILS == "true" ]]
                 then
-                        echo "$userid password inactivity warning"
+                        echo "$userid password inactivity warning sending email to $email"
                         send_email user "Inactivity warning" $email "$userid Password will expire due to inactivity in $days_inactive days on $(hostname)"
                 fi
         else 
@@ -69,30 +69,23 @@ send_email() {
 	SUBJECT=$2
 	RECEIVER=$3
         TEXT=$4
-
-	SERVER_NAME=$(hostname)
 	SENDER=$(whoami)
-	USER="noreply"
-	SUBJECT="Notification from $SENDER on server $SERVER_NAME"
-	
-	[[ -z $2 ]] && SUBJECT="Notification from $SENDER on server $SERVER_NAME"
-	[[ -z $3 ]] && RECEIVER="another_configured_email_address"
-	[[ -z $4 ]] && TEXT="no text context"
 
 	echo "Sending $TYPE email to $RECEIVER"
-	msg="Subject: $SUBJECT\nFrom: $SENDER\nTo: $RECEIVER\n\n"
 	if [[ $TYPE == "user" ]] 
 	then
-		#msg="Subject: $SUBJECT\nFrom: $SENDER\nTo: $RECEIVER\n\n$TEXT"
-		msg=$msg$TEXT
 		msgsummary="Subject: $SUBJECT --- From: $SENDER --- To: $RECEIVER --- $TEXT"
 		echo $msgsummary >> $PNOTIFY_OUTPUT_DIR/$summary_file
-        	emails_sent+=( $msg ) 
-		#echo -e $msg | sendmail -t
+        	emails_sent+=( $msgsummary ) 
+		# Below should send if mail configured on server
+		echo -e $TEXT  | mailx -s "$SUBJECT" $RECEIVER
+		# Example if setup account in ~/.mailrc
+		#echo -e $TEXT  | mailx -A gmail -s "$SUBJECT" $RECEIVER
+
 	elif [[ $TYPE == "summary" ]]
 	then
 		msg="Subject: $SUBJECT\nFrom: $SENDER\nTo: $RECEIVER\n\n"
-		#echo -e $msg | sendmail -t < $PNOTIFY_OUTPUT_DIR/$summary_file
+		mailx -A gmail -s "$SUBJECT" $RECEIVER < $PNOTIFY_OUTPUT_DIR/$summary_file
 	fi
 }
 
