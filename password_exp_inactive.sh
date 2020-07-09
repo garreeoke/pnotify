@@ -1,22 +1,5 @@
 #!/bin/bash
 
-# Create an audit report that runs out of cron to notify people when their 
-# password is n-days from expiration or when their account is n-days from 
-# being locked due to inactivity.  The report should be configurable and 
-# increase in notification frequency the closer to the expiration or inactivity date.
-
-# Create a bash script that will:
-# Read a list of users from a file – the format of the file will be something like:
-# <userid>,<email address>
-# Read a configuration file containing global script settings, the config file will have:
-# The number of days from expiration when the script will start sending emails
-# The number of days of inactivity that will cause the script to start sending emails
-# A global list of emails where a summary report will be sent
-# A flag indicating whether to send individual user emails (some environments are restricted on what mail can be sent)
-# For each user in the list, call “chage -l” to determine when their password will expire – if it is within n-days, send the user an email if possible
-# For each user in the list determine how many days they are from being disabled due to inactivity – if within n-days, send the user an email
-# Send a summary report to the list of emails in the config file
-
 # Global vars
 emails_sent=()
 summary_file="pnotify_summary_$(date +%m-%d-%Y).txt"
@@ -137,6 +120,8 @@ while getopts 'c:d:e:i:o:r:st:' flag; do
     e) PNOTIFY_PASSWORD_EXPIRE_DAYS="${OPTARG}" ;;
     i) PNOTIFY_PASSWORD_INACTIVE_DAYS="${OPTARG}" ;;
     o) PNOTIFY_OUTPUT_DIR="${OPTARG}" ;;
+    r) PNOTIFY_REPORT_EMAILS=${OPTARG}" ;;
+    s) PNOTIFY_SEND_EMAILS='true' ;;
     *) print_usage
        exit 1 ;;
   esac
