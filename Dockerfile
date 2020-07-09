@@ -10,9 +10,9 @@ FROM centos:8
 #ENV PNOTIFY_SYSTEM_TYPE "VPN system"
 
 WORKDIR /pnotify
-COPY pnotify.sh /pnotify/
+COPY password_exp_inactive.sh /pnotify/
 
 # Make reports directory
 RUN mkdir reports
 
-CMD ["/pnotify/pnotify.sh"]
+CMD ["/pnotify/password_exp_inactive.sh.sh"]

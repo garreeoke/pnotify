@@ -1,19 +1,17 @@
-# PNOTIFY
+# password_exp_inactive (PNOTIFY)
 
 Script to check logins for upcoming password expiration and inactivity.
 
-## Quick Start ..
-
-**Currently emails are not being sent ... that work is TBD**
+## Quick Start ...
 
 1. Clone this repo
 2. Modify data/user_data.csv to modify user list
 3. Modify config_file.env
-4. Run: pnotify -c data/config_file.env
+4. Run: password_exp_inactive.sh -c data/config_file.env
 
 ## Syntax
 
- [options]
+password_exp_inactive.sh [options]
 
 * -c [PNOTIFY_CFG_FILE]
 * -d [PNOTIFY_DATA_FILE]
@@ -51,5 +49,5 @@ Use a docker container to run
     
 ## Examples
 * Command line with cfg file: pnotify -c data/config_file.env
-* Docker mounting volume running image: docker run -v "$(pwd)"/data:/pnotify/data garreeoke/pnotify "./pnotify.sh" -c data/config_file.env
-* Docker file passing env var: docker run --env "PNOTIFY_CFG_FILE=/pnotify/data/config_file.env" -v "$(pwd)"/data:/pnotify/data garreeoke/pnotify "./pnotify.sh"
+* Docker mounting volume running image: docker run -v "$(pwd)"/data:/pnotify/data garreeoke/pnotify "./password_exp_inactive.sh" -c data/config_file.env
+* Docker file passing env var: docker run --env "PNOTIFY_CFG_FILE=/pnotify/data/config_file.env" -v "$(pwd)"/data:/pnotify/data garreeoke/pnotify "./password_exp_inactive.sh.sh"
