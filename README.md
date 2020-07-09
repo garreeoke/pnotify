@@ -13,7 +13,7 @@ Script to check logins for upcoming password expiration and inactivity.
 
 ## Syntax
 
-pnotify [options]
+ [options]
 
 * -c [PNOTIFY_CFG_FILE]
 * -d [PNOTIFY_DATA_FILE]
